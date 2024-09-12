@@ -21,10 +21,11 @@
         let playtime = 0;
         let startTime;
         let direction = 'RIGHT';
+        let nextDirection = 'RIGHT'; // To handle quick changes
 
         function setup() {
             createCanvas(600, 400);
-            frameRate(10);
+            frameRate(15); // Increased the frame rate to make the game smoother
             snake = new Snake();
             apple = createApple();
             startTime = millis();
@@ -35,18 +36,21 @@
             snake.update();
             snake.show();
 
+            // Apple eaten
             if (snake.eat(apple)) {
                 apple = createApple();
                 score++;
                 personalBest = max(score, personalBest);
             }
 
+            // Draw UI
             fill(255);
             textSize(16);
             text(`Score: ${score}`, 10, 20);
             text(`High Score: ${highestScore}`, 450, 20);
             text(`Your Best: ${personalBest}`, 450, 40);
 
+            // Check game over
             if (snake.gameOver()) {
                 playtime = Math.floor((millis() - startTime) / 1000);
                 if (score > highestScore) highestScore = score;
@@ -58,18 +62,24 @@
             rect(apple.x, apple.y, resolution, resolution);
         }
 
+        // Handle key presses for direction and restarting
         function keyPressed() {
             if (keyCode === UP_ARROW && direction !== 'DOWN') {
-                direction = 'UP';
+                nextDirection = 'UP';
             } else if (keyCode === DOWN_ARROW && direction !== 'UP') {
-                direction = 'DOWN';
+                nextDirection = 'DOWN';
             } else if (keyCode === LEFT_ARROW && direction !== 'RIGHT') {
-                direction = 'LEFT';
+                nextDirection = 'LEFT';
             } else if (keyCode === RIGHT_ARROW && direction !== 'LEFT') {
-                direction = 'RIGHT';
+                nextDirection = 'RIGHT';
+            }
+
+            if (key === 'r' || key === 'R') {
+                resetGame();
             }
         }
 
+        // Apple creation
         function createApple() {
             let cols = floor(width / resolution);
             let rows = floor(height / resolution);
@@ -78,6 +88,7 @@
             return apple;
         }
 
+        // Display game over message
         function displayGameOver() {
             textSize(32);
             fill(255);
@@ -86,22 +97,28 @@
             text('Press R to Restart', width / 2 - 80, height / 2 + 20);
         }
 
+        // Reset game state
         function resetGame() {
             score = 0;
             snake = new Snake();
             apple = createApple();
             direction = 'RIGHT';
+            nextDirection = 'RIGHT';
             startTime = millis();
             loop();
         }
 
+        // Snake class
         function Snake() {
             this.body = [createVector(100, 50)];
             this.xspeed = 1;
             this.yspeed = 0;
 
+            // Update the snake's position
             this.update = function() {
+                direction = nextDirection; // Commit the direction change here
                 let head = this.body[this.body.length - 1].copy();
+
                 if (direction === 'UP') {
                     this.yspeed = -1;
                     this.xspeed = 0;
@@ -120,9 +137,10 @@
                 head.y += this.yspeed * resolution;
 
                 this.body.push(head);
-                this.body.shift();
+                this.body.shift(); // Keep the snake moving by removing the tail
             };
 
+            // Display the snake
             this.show = function() {
                 for (let i = 0; i < this.body.length; i++) {
                     fill(0, 255, 0);
@@ -130,34 +148,35 @@
                 }
             };
 
+            // Check if the snake eats the apple
             this.eat = function(pos) {
                 let head = this.body[this.body.length - 1];
                 if (head.x === pos.x && head.y === pos.y) {
-                    this.body.push(head.copy());
+                    this.body.push(head.copy()); // Grow the snake
                     return true;
                 }
                 return false;
             };
 
+            // Check if the snake collides with the walls or itself
             this.gameOver = function() {
                 let head = this.body[this.body.length - 1];
+
+                // Check collision with walls
                 if (head.x < 0 || head.y < 0 || head.x >= width || head.y >= height) {
                     return true;
                 }
+
+                // Check collision with self
                 for (let i = 0; i < this.body.length - 1; i++) {
                     let part = this.body[i];
                     if (head.x === part.x && head.y === part.y) {
                         return true;
                     }
                 }
+
                 return false;
             };
-        }
-
-        function keyPressed() {
-            if (key === 'r' || key === 'R') {
-                resetGame();
-            }
         }
     </script>
 </body>
