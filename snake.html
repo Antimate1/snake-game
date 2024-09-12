@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: black; }
+        canvas { border: 1px solid white; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script>
+        let snake;
+        let apple;
+        let resolution = 20;
+        let score = 0;
+        let highestScore = 0;
+        let personalBest = 0;
+        let playtime = 0;
+        let startTime;
+        let direction = 'RIGHT';
+
+        function setup() {
+            createCanvas(600, 400);
+            frameRate(10);
+            snake = new Snake();
+            apple = createApple();
+            startTime = millis();
+        }
+
+        function draw() {
+            background(0);
+            snake.update();
+            snake.show();
+
+            if (snake.eat(apple)) {
+                apple = createApple();
+                score++;
+                personalBest = max(score, personalBest);
+            }
+
+            fill(255);
+            textSize(16);
+            text(`Score: ${score}`, 10, 20);
+            text(`High Score: ${highestScore}`, 450, 20);
+            text(`Your Best: ${personalBest}`, 450, 40);
+
+            if (snake.gameOver()) {
+                playtime = Math.floor((millis() - startTime) / 1000);
+                if (score > highestScore) highestScore = score;
+                noLoop();
+                displayGameOver();
+            }
+
+            fill(255, 0, 0);
+            rect(apple.x, apple.y, resolution, resolution);
+        }
+
+        function keyPressed() {
+            if (keyCode === UP_ARROW && direction !== 'DOWN') {
+                direction = 'UP';
+            } else if (keyCode === DOWN_ARROW && direction !== 'UP') {
+                direction = 'DOWN';
+            } else if (keyCode === LEFT_ARROW && direction !== 'RIGHT') {
+                direction = 'LEFT';
+            } else if (keyCode === RIGHT_ARROW && direction !== 'LEFT') {
+                direction = 'RIGHT';
+            }
+        }
+
+        function createApple() {
+            let cols = floor(width / resolution);
+            let rows = floor(height / resolution);
+            let apple = createVector(floor(random(cols)), floor(random(rows)));
+            apple.mult(resolution);
+            return apple;
+        }
+
+        function displayGameOver() {
+            textSize(32);
+            fill(255);
+            text('Game Over', width / 2 - 100, height / 2 - 20);
+            textSize(16);
+            text('Press R to Restart', width / 2 - 80, height / 2 + 20);
+        }
+
+        function resetGame() {
+            score = 0;
+            snake = new Snake();
+            apple = createApple();
+            direction = 'RIGHT';
+            startTime = millis();
+            loop();
+        }
+
+        function Snake() {
+            this.body = [createVector(100, 50)];
+            this.xspeed = 1;
+            this.yspeed = 0;
+
+            this.update = function() {
+                let head = this.body[this.body.length - 1].copy();
+                if (direction === 'UP') {
+                    this.yspeed = -1;
+                    this.xspeed = 0;
+                } else if (direction === 'DOWN') {
+                    this.yspeed = 1;
+                    this.xspeed = 0;
+                } else if (direction === 'LEFT') {
+                    this.xspeed = -1;
+                    this.yspeed = 0;
+                } else if (direction === 'RIGHT') {
+                    this.xspeed = 1;
+                    this.yspeed = 0;
+                }
+
+                head.x += this.xspeed * resolution;
+                head.y += this.yspeed * resolution;
+
+                this.body.push(head);
+                this.body.shift();
+            };
+
+            this.show = function() {
+                for (let i = 0; i < this.body.length; i++) {
+                    fill(0, 255, 0);
+                    rect(this.body[i].x, this.body[i].y, resolution, resolution);
+                }
+            };
+
+            this.eat = function(pos) {
+                let head = this.body[this.body.length - 1];
+                if (head.x === pos.x && head.y === pos.y) {
+                    this.body.push(head.copy());
+                    return true;
+                }
+                return false;
+            };
+
+            this.gameOver = function() {
+                let head = this.body[this.body.length - 1];
+                if (head.x < 0 || head.y < 0 || head.x >= width || head.y >= height) {
+                    return true;
+                }
+                for (let i = 0; i < this.body.length - 1; i++) {
+                    let part = this.body[i];
+                    if (head.x === part.x && head.y === part.y) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+        }
+
+        function keyPressed() {
+            if (key === 'r' || key === 'R') {
+                resetGame();
+            }
+        }
+    </script>
+</body>
+</html>
